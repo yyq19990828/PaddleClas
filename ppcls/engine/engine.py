@@ -528,6 +528,7 @@ class Engine(object):
 
                     with self.auto_cast(is_eval=True):
                         out = self.model(batch_tensor)
+                        # print(out)
 
                     if isinstance(out, list):
                         out = out[0]
@@ -594,11 +595,12 @@ class Engine(object):
             dump_infer_config(self.config, dst_path,
                               self.config["Global"]["image_shape"])
 
+        batch_size = self.config["Global"].get("batch_infer", None)
         model = paddle.jit.to_static(
             model,
             input_spec=[
                 paddle.static.InputSpec(
-                    shape=[None] + self.config["Global"]["image_shape"],
+                    shape=[batch_size] + self.config["Global"]["image_shape"],
                     dtype='float32')
             ])
 
@@ -623,7 +625,7 @@ class Engine(object):
                             model,
                             input_spec=[
                                 paddle.static.InputSpec(
-                                    shape=[None] +
+                                    shape=[batch_size] +
                                     self.config["Global"]["image_shape"],
                                     dtype='float32')
                             ])
