@@ -15,3 +15,6 @@ nohup.out
 .idea
 inference/
 test.py
+dataset/*
+*.egg-info/
+dist/
