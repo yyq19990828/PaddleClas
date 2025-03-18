@@ -2,14 +2,14 @@
 Global:
   checkpoints: null
   pretrained_model: null
-  output_dir: "./output/"
+  output_dir: "./output/tyjt2"
   device: "gpu"
-  save_interval: 5
+  save_interval: 25
   eval_during_train: True
   eval_interval: 1
-  epochs: 30
+  epochs: 100
   print_batch_step: 20
-  use_visualdl: False
+  use_visualdl: True
   # used for static mode and model export
   image_shape: [3, 192, 256]
   save_inference_dir: "./inference"
@@ -19,7 +19,7 @@ Global:
 Arch:
   name: "PPLCNet_x1_0"
   pretrained: True
-  class_num: 19
+  class_num: 21
   use_ssld: True
   lr_mult_list: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   infer_add_softmax: False
@@ -53,8 +53,8 @@ DataLoader:
   Train:
     dataset:
       name: MultiLabelDataset
-      image_root: "dataset/VeRi/"
-      cls_label_path: "dataset/VeRi/train_list.txt"
+      image_root: "dataset/tyjt/"
+      cls_label_path: "dataset/tyjt/train.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
@@ -99,8 +99,8 @@ DataLoader:
   Eval:
     dataset:
       name: MultiLabelDataset
-      image_root: "dataset/VeRi/"
-      cls_label_path: "dataset/VeRi/test_list.txt"
+      image_root: "dataset/tyjt/"
+      cls_label_path: "dataset/tyjt/val.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
@@ -123,7 +123,8 @@ DataLoader:
       use_shared_memory: False
 
 Infer:
-  infer_imgs: ./deploy/images/PULC/vehicle_attribute/0002_c002_00030670_0.jpg
+  infer_imgs: ./dataset/tyjt/val
+  save_dir: ./output/tyjt2/infer_result
   batch_size: 10
   transforms:
     - DecodeImage:
