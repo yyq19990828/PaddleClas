@@ -22,13 +22,26 @@ class VehicleAttribute(object):
     def __init__(self, color_threshold=0.5, type_threshold=0.5):
         self.color_threshold = color_threshold
         self.type_threshold = type_threshold
+        # self.color_list = [
+        #     "yellow", "orange", "green", "gray", "red", "blue", "white",
+        #     "golden", "brown", "black"
+        # ]
+
+        #tyjt
         self.color_list = [
-            "yellow", "orange", "green", "gray", "red", "blue", "white",
-            "golden", "brown", "black"
+            "white", "gray", "red", "yellow", "brown", "blue", "black", 
+            "green", "purple", "pink", "other"
         ]
+
+        # self.type_list = [
+        #     "sedan", "suv", "van", "hatchback", "mpv", "pickup", "bus",
+        #     "truck", "estate"
+        # ]
+
+        #tyjt
         self.type_list = [
-            "sedan", "suv", "van", "hatchback", "mpv", "pickup", "bus",
-            "truck", "estate"
+            "bus", "car", "engineering truck", "truck", "police car", 
+            "ambulance", "mixer", "null", "slagcar", "fire engine"
         ]
 
     def __call__(self, x, file_names=None):
@@ -44,23 +57,30 @@ class VehicleAttribute(object):
         for idx, res in enumerate(x):
             res = res.tolist()
             label_res = []
-            color_idx = np.argmax(res[:10])
-            type_idx = np.argmax(res[10:])
-            print(color_idx, type_idx)
-            if res[color_idx] >= self.color_threshold:
-                color_info = f"Color: ({self.color_list[color_idx]}, prob: {res[color_idx]})"
+            print(file_names[idx])
+            # 先车型后颜色
+            color_idx = np.argmax(res[10:])
+            # print(color_idx)
+            type_idx = np.argmax(res[:10])
+            # print(type_idx)
+            print(res)
+            # print(color_idx, type_idx)
+            if res[color_idx + 10] >= self.color_threshold:
+                color_info = f"Color: ({self.color_list[color_idx]}, prob: {res[color_idx + 10]})"
+                print(color_info)
             else:
                 color_info = "Color unknown"
 
-            if res[type_idx + 10] >= self.type_threshold:
-                type_info = f"Type: ({self.type_list[type_idx]}, prob: {res[type_idx + 10]})"
+            if res[type_idx] >= self.type_threshold:
+                type_info = f"Type: ({self.type_list[type_idx]}, prob: {res[type_idx]})"
+                print(type_info)
             else:
                 type_info = "Type unknown"
 
             label_res = f"{color_info}, {type_info}"
 
-            threshold_list = [self.color_threshold
-                              ] * 10 + [self.type_threshold] * 9
+            threshold_list = [self.type_threshold
+                              ] * 10 + [self.color_threshold] * 11
             pred_res = (np.array(res) > np.array(threshold_list)
                         ).astype(np.int8).tolist()
             batch_res.append({
