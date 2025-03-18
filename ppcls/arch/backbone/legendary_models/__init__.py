@@ -6,3 +6,4 @@ from .mobilenet_v4 import MobileNetV4_conv_small, MobileNetV4_conv_medium, Mobil
 from .inception_v3 import InceptionV3
 from .vgg import VGG11, VGG13, VGG16, VGG19
 from .pp_lcnet import PPLCNetBaseNet, PPLCNet_x0_25, PPLCNet_x0_35, PPLCNet_x0_5, PPLCNet_x0_75, PPLCNet_x1_0, PPLCNet_x1_5, PPLCNet_x2_0, PPLCNet_x2_5
+from .resnet_csra import ResNet18_CSRA, ResNet34_CSRA, ResNet50_CSRA, ResNet101_CSRA, ResNet152_CSRA, ResNet50_vd_CSRA, ResNet101_vd_CSRA, ResNet152_vd_CSRA, ResNet200_vd_CSRA

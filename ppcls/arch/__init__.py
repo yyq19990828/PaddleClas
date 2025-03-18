@@ -175,3 +175,24 @@ class AttentionModel(DistillationModel):
                 out = self.model_list[idx](out, label)
                 result_dict.update(out)
         return result_dict
+    
+
+
+if __name__ == "__main__":
+    from ..utils.config import get_config
+    # config = get_config("configs/rec/ch_ppocr_v2.0/rec_chinese_lite_train_v2.0.yml")
+    # model = build_model(config)
+    # model = apply_to_static(config, model, is_rec=True)
+    # print(model)
+    mod = importlib.import_module(__name__)
+    archs = dir(mod)
+    for arch in archs:
+        if arch.startswith("__"):
+            continue
+        print(arch)
+        if arch == "build_model":
+            continue
+        # model = getattr(mod, arch)()
+        # print(model)
+    model_func = getattr(mod, 'ResNet18')
+    help(model_func)

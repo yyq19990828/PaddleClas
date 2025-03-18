@@ -29,6 +29,7 @@ from .legendary_models.pp_lcnet_v2 import PPLCNetV2_small, PPLCNetV2_base, PPLCN
 from .legendary_models.esnet import ESNet_x0_25, ESNet_x0_5, ESNet_x0_75, ESNet_x1_0
 from .legendary_models.pp_hgnet import PPHGNet_tiny, PPHGNet_small, PPHGNet_base
 from .legendary_models.pp_hgnet_v2 import PPHGNetV2_B0, PPHGNetV2_B1, PPHGNetV2_B2, PPHGNetV2_B3, PPHGNetV2_B4, PPHGNetV2_B5, PPHGNetV2_B6
+from .legendary_models.resnet_csra import ResNet18_CSRA, ResNet34_CSRA, ResNet50_CSRA, ResNet101_CSRA, ResNet152_CSRA, ResNet50_vd_CSRA, ResNet101_vd_CSRA, ResNet152_vd_CSRA, ResNet200_vd_CSRA
 
 from .model_zoo.resnet_vc import ResNet50_vc
 from .model_zoo.resnext import ResNeXt50_32x4d, ResNeXt50_64x4d, ResNeXt101_32x4d, ResNeXt101_64x4d, ResNeXt152_32x4d, ResNeXt152_64x4d
