@@ -97,6 +97,10 @@ NET_CONFIG = {
 }
 
 class CSRA(TheseusLayer):
+    """
+    http://arxiv.org/abs/2108.02456
+    CSRA Layer for attention mechanism in ResNet architecture.
+    """
     def __init__(self,
                  input_dim,
                  num_classes,
