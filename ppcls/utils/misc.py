@@ -150,6 +150,7 @@ class AttrMeter(object):
 
         res = [
             ma, label_f1, label_pos_recall, label_neg_recall, instance_f1,
-            instance_acc, instance_prec, instance_recall
+            instance_acc, instance_prec, instance_recall, 
+            label_acc  # 这是一个list
         ]
         return res

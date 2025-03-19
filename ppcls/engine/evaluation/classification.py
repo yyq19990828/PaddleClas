@@ -150,10 +150,13 @@ def classification_eval(engine, epoch_id=0):
         engine.eval_dataloader.reset()
 
     if "ATTRMetric" in engine.config["Metric"]["Eval"][0]:
+        attr_res = engine.eval_metric_func.attr_res()
         metric_msg = ", ".join([
             "evalres: ma: {:.5f} label_f1: {:.5f} label_pos_recall: {:.5f} label_neg_recall: {:.5f} instance_f1: {:.5f} instance_acc: {:.5f} instance_prec: {:.5f} instance_recall: {:.5f}".
-            format(*engine.eval_metric_func.attr_res())
+            format(*attr_res[:-1])
         ])
+        logger.info("[Eval][Epoch {}]".format(epoch_id))
+        logger.info("label_level acc: [{}]".format(", ".join(f"{x:.5f}" for x in attr_res[-1])))
         logger.info("[Eval][Epoch {}][Avg]{}".format(epoch_id, metric_msg))
 
         # do not try to save best eval.model
