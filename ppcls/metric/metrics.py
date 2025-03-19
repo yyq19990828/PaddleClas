@@ -460,6 +460,31 @@ class AccuracyScore(MultiLabelMetric):
 
 def get_attr_metrics(gt_label, preds_probs, threshold):
     """
+    计算属性分类的评估指标。
+
+    参数:
+        gt_label (numpy.ndarray): 真实标签，形状为 (N, C)，其中 N 是样本数，C 是类别数。
+                                  标签值为 1 表示正类，0 表示负类，-1 表示忽略的类别。
+        preds_probs (numpy.ndarray): 模型预测的概率，形状为 (N, C)。
+        threshold (float): 用于将预测概率转换为二值标签的阈值。
+
+    返回:
+        EasyDict: 包含以下评估指标的字典：
+            - gt_pos (numpy.ndarray): 每个类别的真实正类数量 (TP + FN)。
+            - gt_neg (numpy.ndarray): 每个类别的真实负类数量 (TN + FP)。
+            - true_pos (numpy.ndarray): 每个类别的真正例数量 (TP)。
+            - true_neg (numpy.ndarray): 每个类别的真负例数量 (TN)。
+            - false_pos (numpy.ndarray): 每个类别的假正例数量 (FP)。
+            - false_neg (numpy.ndarray): 每个类别的假负例数量 (FN)。
+            - gt_pos_ins (numpy.ndarray): 每个样本的真实正类数量。
+            - true_pos_ins (numpy.ndarray): 每个样本的预测正类数量。
+            - intersect_pos (numpy.ndarray): 每个样本的真正例数量 (预测正类与真实正类的交集)。
+            - union_pos (numpy.ndarray): 每个样本的预测正类与真实正类的并集数量 (IOU)。
+
+    注意:
+        - 该函数会忽略 gt_label 中值为 -1 的类别。
+        - 适用于多标签分类任务。"""
+    """
     index: evaluated label index
     adapted from "https://github.com/valencebond/Rethinking_of_PAR/blob/master/metrics/pedestrian_metrics.py"
     """
