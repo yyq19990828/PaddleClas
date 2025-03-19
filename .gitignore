@@ -13,8 +13,9 @@ log/
 nohup.out
 .DS_Store
 .idea
-inference/
 test.py
 dataset/*
 *.egg-info/
 dist/
+output_train/*
+output_inference/*
