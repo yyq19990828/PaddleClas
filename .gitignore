@@ -19,3 +19,6 @@ dataset/*
 dist/
 output_train/*
 output_inference/*
+
+*.sh
+*.yaml
