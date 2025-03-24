@@ -14,6 +14,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import logging
 import os
 import gc
 import shutil
@@ -79,7 +80,13 @@ class Engine(object):
         self.output_dir = self.config['Global']['output_dir']
         log_file = os.path.join(self.output_dir, f"{mode}.log")
         log_ranks = self.config['Global'].get("log_ranks", "0")
-        init_logger(log_file=log_file, log_ranks=log_ranks)
+        log_level = {
+            0: logging.DEBUG,
+            1: logging.INFO,
+            2: logging.WARNING,
+            3: logging.ERROR
+        }
+        init_logger(log_file=log_file, log_level=log_level[0], log_ranks=log_ranks)
         print_config(config)
 
         # init train_func and eval_func

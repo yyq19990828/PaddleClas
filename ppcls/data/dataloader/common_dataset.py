@@ -59,6 +59,8 @@ class CommonDataset(Dataset):
         self.labels = []
         if label_ratio:
             self.label_ratio = self._load_anno(label_ratio=label_ratio)
+            logger.info("label ratio: {}".format(",".join(f"{x:.2f}%" for x in 100*self.label_ratio)))
+            logger.debug("sum label ratio: {}".format(np.sum(self.label_ratio)))
         else:
             self._load_anno()
 
