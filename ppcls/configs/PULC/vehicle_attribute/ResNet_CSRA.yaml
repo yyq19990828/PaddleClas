@@ -2,18 +2,18 @@
 Global:
   checkpoints: null
   pretrained_model: null
-  output_dir: "./output/CSRA"
+  output_dir: "./output_train/test"
   device: "gpu"
-  save_interval: 5
+  save_interval: 25
   eval_during_train: True
   eval_interval: 1
-  epochs: 30
+  epochs: 1
   print_batch_step: 20
   use_visualdl: False
   # used for static mode and model export
-  batch_infer: 4
-  image_shape: [3, 192, 256]
-  save_inference_dir: "./inference"
+  batch_infer: 1
+  image_shape: [3, 224, 224]
+  save_inference_dir: "./output_inference"
   use_multilabel: True
 
 # model architecture
@@ -53,21 +53,21 @@ DataLoader:
   Train:
     dataset:
       name: MultiLabelDataset
-      image_root: "dataset/tyjt/"
-      cls_label_path: "dataset/tyjt/train.txt"
+      image_root: ["dataset/tyjt/", "dataset/tyjt/"]
+      cls_label_path: ["train.txt", "train.txt"]
       label_ratio: True
       transform_ops:
         - DecodeImage:
             to_rgb: True
             channel_first: False
         - ResizeImage:
-            size: [256, 192]
+            size: [224, 224]
         - Padv2:
-            size: [276, 212]
+            size: [256, 256]
             pad_mode: 1
             fill_value: 0
         - RandomCropImage:
-            size: [256, 192]
+            size: [224, 224]
         - RandFlipImage:
             flip_code: 1
         - NormalizeImage:
