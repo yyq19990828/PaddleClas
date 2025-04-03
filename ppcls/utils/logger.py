@@ -97,13 +97,13 @@ def init_logger(name='paddleclas',
 
     # 为终端输出创建彩色格式化器
     color_formatter = ColorFormatter(
-        '[%(asctime)s] %(name)s %(levelname)s [%(relativepath)s:%(funcName)s:%(lineno)d]: %(message)s',
+        '[%(asctime)s] %(name)s %(levelname)s [%(funcName)s %(relativepath)s:%(lineno)d]: %(message)s',
         datefmt="%Y/%m/%d %H:%M:%S"
     )
     
     # 为文件日志创建普通格式化器（不带颜色代码）
     file_formatter = logging.Formatter(
-        '[%(asctime)s] %(name)s %(levelname)s [%(relativepath)s:%(funcName)s:%(lineno)d]: %(message)s',
+        '[%(asctime)s] %(name)s %(levelname)s %(funcName)s %(relativepath)s:%(lineno)d]: %(message)s',
         datefmt="%Y/%m/%d %H:%M:%S"
     )
 
