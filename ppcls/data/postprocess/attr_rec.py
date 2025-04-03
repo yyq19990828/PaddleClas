@@ -22,27 +22,47 @@ class VehicleAttribute(object):
     def __init__(self, color_threshold=0.5, type_threshold=0.5):
         self.color_threshold = color_threshold
         self.type_threshold = type_threshold
+        
+        # =========== 颜色列表 ==============
+        # Paddle
         # self.color_list = [
         #     "yellow", "orange", "green", "gray", "red", "blue", "white",
         #     "golden", "brown", "black"
         # ]
 
-        #tyjt
-        self.color_list = [
-            "white", "gray", "red", "yellow", "brown", "blue", "black", 
-            "green", "purple", "pink", "other"
-        ]
+        # yyq
+        # self.color_list = [
+        #     "white", "gray", "red", "yellow", "brown", "blue", "black", 
+        #     "green", "purple", "pink", "other"
+        # ]
 
+        # 文勇(old)
+        self.color_list = [
+            "black", "white", "gray", "red", "yellow", "green", "blue", 
+            "purple", "brown", "pink", "other"
+        ]
+        # ==================================
+
+
+        # =========== 车型列表 ==============
+        # Paddle
         # self.type_list = [
         #     "sedan", "suv", "van", "hatchback", "mpv", "pickup", "bus",
         #     "truck", "estate"
         # ]
 
-        #tyjt
+        # yyq
+        # self.type_list = [
+        #     "bus", "car", "engineering truck", "truck", "police car", 
+        #     "ambulance", "mixer", "null", "slagcar", "fire engine"
+        # ]
+
+        # 文勇(old)
         self.type_list = [
-            "bus", "car", "engineering truck", "truck", "police car", 
-            "ambulance", "mixer", "null", "slagcar", "fire engine"
+            "car", "truck", "bus", "tanker", "slagcar", "fire engine", 
+            "mixer", "ambulance", "police car", "engineering truck"
         ]
+        # ==================================
 
     def __call__(self, x, file_names=None):
         if isinstance(x, dict):
