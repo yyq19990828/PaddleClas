@@ -7,9 +7,9 @@ Global:
   save_interval: 25
   eval_during_train: True
   eval_interval: 1
-  epochs: 1
+  epochs: 100
   print_batch_step: 20
-  use_visualdl: False
+  use_visualdl: False 
   # used for static mode and model export
   batch_infer: 1
   image_shape: [3, 224, 224]
@@ -53,8 +53,8 @@ DataLoader:
   Train:
     dataset:
       name: MultiLabelDataset
-      image_root: ["dataset/tyjt/", "dataset/tyjt/"]
-      cls_label_path: ["train.txt", "train.txt"]
+      image_root: ["dataset/tyjt/", "dataset/slagcar/"]
+      cls_label_path: "train_old.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
@@ -86,8 +86,8 @@ DataLoader:
   Eval:
     dataset:
       name: MultiLabelDataset
-      image_root: "dataset/tyjt/"
-      cls_label_path: "dataset/tyjt/val.txt"
+      image_root: ["dataset/tyjt/", "dataset/slagcar/"]
+      cls_label_path: "val_old.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
