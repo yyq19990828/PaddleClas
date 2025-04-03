@@ -44,7 +44,31 @@ class RelativePathFilter(logging.Filter):
         record.relativepath = os.path.relpath(record.pathname, start=os.getcwd())
         return True
 
-def init_logger(name='ppcls',
+class ColorFormatter(logging.Formatter):
+    """自定义日志格式化器，支持颜色和加粗"""
+    COLOR_CODES = {
+        'DEBUG': '\033[1;94m',  # 加粗蓝色
+        'INFO': '\033[1;92m',   # 加粗绿色
+        'WARNING': '\033[1;93m',  # 加粗黄色
+        'ERROR': '\033[1;91m',  # 加粗红色
+        'CRITICAL': '\033[1;101m',  # 加粗红色背景
+    }
+    RESET_CODE = '\033[0m'  # 重置颜色
+
+    def format(self, record):
+        # 获取日志级别对应的颜色并加粗
+        color = self.COLOR_CODES.get(record.levelname, self.RESET_CODE)
+        # 创建记录的副本，避免修改原始记录（可能被其他处理器使用）
+        record_copy = logging.makeLogRecord(record.__dict__)
+        # 修改消息头的格式，带颜色加粗
+        record_copy.levelname = f"{color}{record.levelname}{self.RESET_CODE}"
+        record_copy.name = f"\033[1m{record.name}{self.RESET_CODE}"
+        record_copy.relativepath = f"\033[1m{record.relativepath}{self.RESET_CODE}"
+        record_copy.funcName = f"\033[1m{record.funcName}{self.RESET_CODE}"
+        # 保持 lineno 为整数类型，避免格式化错误
+        return super().format(record_copy)
+
+def init_logger(name='paddleclas',
                 log_file=None,
                 log_level=logging.INFO,
                 log_ranks="0"):
@@ -71,19 +95,22 @@ def init_logger(name='ppcls',
         _logger = logging.getLogger(name)
         init_flag = True
 
-    # formatter = logging.Formatter(
-    #     '[%(asctime)s] %(name)s %(levelname)s: %(message)s',
-    #     datefmt="%Y/%m/%d %H:%M:%S")
-
-    # 修改日志格式，包含相对路径、函数名和行号
-    formatter = logging.Formatter(
+    # 为终端输出创建彩色格式化器
+    color_formatter = ColorFormatter(
+        '[%(asctime)s] %(name)s %(levelname)s [%(relativepath)s:%(funcName)s:%(lineno)d]: %(message)s',
+        datefmt="%Y/%m/%d %H:%M:%S"
+    )
+    
+    # 为文件日志创建普通格式化器（不带颜色代码）
+    file_formatter = logging.Formatter(
         '[%(asctime)s] %(name)s %(levelname)s [%(relativepath)s:%(funcName)s:%(lineno)d]: %(message)s',
         datefmt="%Y/%m/%d %H:%M:%S"
     )
 
+    # 配置终端处理器
     stream_handler = logging.StreamHandler(stream=sys.stdout)
     stream_handler.addFilter(RelativePathFilter()) # 添加过滤器
-    stream_handler.setFormatter(formatter)
+    stream_handler.setFormatter(color_formatter)  # 使用彩色格式化器
     stream_handler._name = 'stream_handler'
 
     # add stream_handler when _logger dose not contain stream_handler
@@ -95,17 +122,21 @@ def init_logger(name='ppcls',
     if init_flag:
         _logger.addHandler(stream_handler)
 
+    # 配置文件处理器
     if log_file is not None and dist.get_rank() == 0:
         log_file_folder = os.path.split(log_file)[0]
         os.makedirs(log_file_folder, exist_ok=True)
         file_handler = logging.FileHandler(log_file, 'a')
-        file_handler.setFormatter(formatter)
+        file_handler.addFilter(RelativePathFilter())  # 添加相同的过滤器
+        file_handler.setFormatter(file_formatter)  # 明确使用普通格式化器，不带颜色
         file_handler._name = 'file_handler'
 
         # add file_handler when _logger dose not contain same file_handler
         for i, h in enumerate(_logger.handlers):
             if h.get_name() == file_handler.get_name() and \
                     h.baseFilename == file_handler.baseFilename:
+                # 确保已有的file_handler也使用正确的formatter
+                h.setFormatter(file_formatter)
                 break
             if i == len(_logger.handlers) - 1:
                 _logger.addHandler(file_handler)
