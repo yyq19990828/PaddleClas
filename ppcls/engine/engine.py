@@ -87,6 +87,8 @@ class Engine(object):
             3: logging.ERROR
         }
         init_logger(log_file=log_file, log_level=log_level[0], log_ranks=log_ranks)
+        
+        # 打印配置文件
         print_config(config)
 
         # init train_func and eval_func

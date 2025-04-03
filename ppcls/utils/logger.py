@@ -33,29 +33,35 @@ class LoggerHook(object):
         self.log = log
 
     def __call__(self, *args, **kwargs):
+        # 找到调用栈中第一个logger文件以外的调用
+        kwargs['stacklevel'] =3
         if not self.block:
             self.log(*args, **kwargs)
 
+# 自定义日志记录器的 Filter，用于添加相对路径
+class RelativePathFilter(logging.Filter):
+    def filter(self, record):
+        record.relativepath = os.path.relpath(record.pathname, start=os.getcwd())
+        return True
 
 def init_logger(name='ppcls',
                 log_file=None,
                 log_level=logging.INFO,
                 log_ranks="0"):
-    """Initialize and get a logger by name.
-    If the logger has not been initialized, this method will initialize the
-    logger by adding one or two handlers, otherwise the initialized logger will
-    be directly returned. During initialization, a StreamHandler will always be
-    added. If `log_file` is specified a FileHandler will also be added.
-    Args:
-        name (str): Logger name.
-        log_file (str | None): The log filename. If specified, a FileHandler
-            will be added to the logger.
-        log_level (int): The logger level. Note that only the process of
-            rank 0 is affected, and other processes will set the level to
-            "Error" thus be silent most of the time.
-        log_ranks (str): The ids of gpu to log which are separated by "," when more than 1, "0" by default.
-    Returns:
-        logging.Logger: The expected logger.
+    """通过名称初始化并获取一个日志记录器。
+    如果日志记录器尚未初始化，此方法将通过添加一个或两个处理器来初始化日志记录器，
+    否则将直接返回已初始化的日志记录器。在初始化期间，总是会添加一个 StreamHandler。
+    如果指定了 `log_file`，还会添加一个 FileHandler。
+    
+    参数:
+        name (str): 日志记录器名称。
+        log_file (str | None): 日志文件名。如果指定，将为日志记录器添加一个 FileHandler。
+        log_level (int): 日志记录器级别。注意，仅 rank 0 的进程会受到影响，
+            其他进程将日志级别设置为 "Error"，因此大多数情况下是静默的。
+        log_ranks (str): 需要记录日志的 GPU ID，多个 ID 用 "," 分隔，默认为 "0"。
+    
+    返回:
+        logging.Logger: 所需的日志记录器。
     """
     global _logger
 
@@ -65,11 +71,18 @@ def init_logger(name='ppcls',
         _logger = logging.getLogger(name)
         init_flag = True
 
+    # formatter = logging.Formatter(
+    #     '[%(asctime)s] %(name)s %(levelname)s: %(message)s',
+    #     datefmt="%Y/%m/%d %H:%M:%S")
+
+    # 修改日志格式，包含相对路径、函数名和行号
     formatter = logging.Formatter(
-        '[%(asctime)s] %(name)s %(levelname)s: %(message)s',
-        datefmt="%Y/%m/%d %H:%M:%S")
+        '[%(asctime)s] %(name)s %(levelname)s [%(relativepath)s:%(funcName)s:%(lineno)d]: %(message)s',
+        datefmt="%Y/%m/%d %H:%M:%S"
+    )
 
     stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.addFilter(RelativePathFilter()) # 添加过滤器
     stream_handler.setFormatter(formatter)
     stream_handler._name = 'stream_handler'
 
@@ -111,23 +124,23 @@ def init_logger(name='ppcls',
 
 
 @LoggerHook
-def info(fmt, *args):
-    _logger.info(fmt, *args)
+def info(fmt, *args, **kwargs):
+    _logger.info(fmt, *args, **kwargs)
 
 
 @LoggerHook
-def debug(fmt, *args):
-    _logger.debug(fmt, *args)
+def debug(fmt, *args, **kwargs):
+    _logger.debug(fmt, *args, **kwargs)
 
 
 @LoggerHook
-def warning(fmt, *args):
-    _logger.warning(fmt, *args)
+def warning(fmt, *args, **kwargs):
+    _logger.warning(fmt, *args, **kwargs)
 
 
 @LoggerHook
-def error(fmt, *args):
-    _logger.error(fmt, *args)
+def error(fmt, *args, **kwargs):
+    _logger.error(fmt, *args, **kwargs)
 
 
 def scaler(name, value, step, writer):
