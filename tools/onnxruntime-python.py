@@ -7,6 +7,17 @@ import os
 import time
 from tqdm import tqdm
 
+# 常用的 CLI 启动案例:
+#
+# 1. 单张图像推理:
+# python onnxruntime-python.py --model /path/to/your/model.onnx --image /path/to/your/image.jpg --labels /path/to/your/labels.txt --topk 3
+#
+# 2. 批量图像推理:
+# python onnxruntime-python.py --model /path/to/your/model.onnx --dir /path/to/your/image/directory --labels /path/to/your/labels.txt --threshold 0.6
+#
+# 3. 批量推理并进行评估:
+# python onnxruntime-python.py --model /path/to/your/model.onnx --dir /path/to/your/image/directory --labels /path/to/your/labels.txt --val_file /path/to/your/val.txt --eval --apply_sigmoid
+
 def preprocess_image(image_path, target_size=(224, 224), mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]):
     """预处理图像用于模型推理"""
     img = cv2.imread(image_path)
@@ -297,7 +308,7 @@ def main():
     parser.add_argument('--val_file', help='验证集标注文件路径(val.txt)，用于评估')
     parser.add_argument('--eval', action='store_true', help='是否进行模型评估')
     parser.add_argument('--threshold', type=float, default=0.5, help='多标签分类的阈值')
-    parser.add_argument('--verbose', action='store_true', help='显示详细调试信息')
+    # parser.add_argument('--verbose', action='store_true', help='显示详细调试信息')
     parser.add_argument('--apply_sigmoid', action='store_true', help='是否对模型输出应用sigmoid')
     args = parser.parse_args()
     
