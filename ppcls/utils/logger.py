@@ -68,7 +68,7 @@ class ColorFormatter(logging.Formatter):
         # 保持 lineno 为整数类型，避免格式化错误
         return super().format(record_copy)
 
-def init_logger(name='paddleclas',
+def init_logger(name='PaddleClas',
                 log_file=None,
                 log_level=logging.INFO,
                 log_ranks="0"):
@@ -95,10 +95,9 @@ def init_logger(name='paddleclas',
         _logger = logging.getLogger(name)
         init_flag = True
 
-    # 为终端输出创建彩色格式化器
+    # 为终端输出创建彩色格式化器（去除实时时间显示）
     color_formatter = ColorFormatter(
-        '[%(asctime)s] %(name)s %(levelname)s [%(funcName)s %(relativepath)s:%(lineno)d]: %(message)s',
-        datefmt="%Y/%m/%d %H:%M:%S"
+        '%(name)s %(levelname)s [%(funcName)s %(relativepath)s:%(lineno)d]: %(message)s'
     )
     
     # 为文件日志创建普通格式化器（不带颜色代码）
