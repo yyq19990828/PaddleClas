@@ -595,7 +595,8 @@ class NormalizeImage(object):
         assert isinstance(img,
                           np.ndarray), "invalid input 'img' in NormalizeImage"
 
-        img = (img.astype('float32') * self.scale - self.mean) / self.std
+        # img = (img.astype('float32') * self.scale - self.mean) / self.std
+        img = img.astype('float32') * self.scale
 
         if self.channel_num == 4:
             img_h = img.shape[1] if self.order == 'chw' else img.shape[0]

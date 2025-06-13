@@ -79,7 +79,7 @@ class MultiLabelDataset(CommonDataset):
             with open(current_cls_path) as fd:
                 lines = fd.readlines()
                 for l in lines:
-                    l = l.strip().split("\t")
+                    l = l.strip().split(" ")
                     self.images.append(os.path.join(img_root, l[0]))
 
                     labels = l[1].split(',')
