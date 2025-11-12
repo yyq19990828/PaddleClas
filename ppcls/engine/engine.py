@@ -67,6 +67,10 @@ class Engine(object):
             self.is_rec = True
         else:
             self.is_rec = False
+        if self.config["Arch"].get("use_fused_attn", False):
+            if not self.config.get("AMP", {}).get("use_amp", False):
+                self.config["Arch"]["use_fused_attn"] = False
+                self.config["Arch"]["use_fused_linear"] = False
 
         # set seed
         seed = self.config["Global"].get("seed", False)
@@ -115,8 +119,8 @@ class Engine(object):
 
         # set device
         assert self.config["Global"]["device"] in [
-            "cpu", "gpu", "xpu", "npu", "mlu", "dcu", "ascend", "intel_gpu", "mps",
-            "gcu"
+            "cpu", "gpu", "xpu", "npu", "mlu", "dcu", "ascend", "intel_gpu",
+            "mps", "gcu"
         ]
         self.device = paddle.set_device(self.config["Global"]["device"])
         logger.info('train with paddle {} and device {}'.format(
@@ -618,29 +622,12 @@ class Engine(object):
             model.base_model.quanter.save_quantized_model(model,
                                                           save_path + "_int8")
         else:
-            paddle_version = version.parse(paddle.__version__)
-            if self.config["Global"].get("export_with_pir", False):
-                assert (paddle_version >= version.parse('3.0.0b2') or
-                        paddle_version == version.parse('0.0.0')
-                        ) and os.environ.get("FLAGS_enable_pir_api",
-                                             None) not in ["0", "False"]
-                paddle.jit.save(model, save_path)
-            else:
-                if paddle_version >= version.parse(
-                        '3.0.0b2') or paddle_version == version.parse('0.0.0'):
-                    model.forward.rollback()
-                    with paddle.pir_utils.OldIrGuard():
-                        model = paddle.jit.to_static(
-                            model,
-                            input_spec=[
-                                paddle.static.InputSpec(
-                                    shape=[batch_size] +
-                                    self.config["Global"]["image_shape"],
-                                    dtype='float32')
-                            ])
-                        paddle.jit.save(model, save_path)
-                else:
-                    paddle.jit.save(model, save_path)
+            paddle.jit.save(model, save_path)
+        if self.config["Global"].get("export_for_fd",
+                                     False) or uniform_output_enabled:
+            dst_path = os.path.join(os.path.dirname(save_path), 'inference.yml')
+            dump_infer_config(self.config, dst_path,
+                              self.config["Global"]["image_shape"])
         logger.info(
             f"Export succeeded! The inference model exported has been saved in \"{save_path}\"."
         )
