@@ -19,7 +19,7 @@ Global:
 Arch:
   name: "PPLCNet_x1_0"
   pretrained: True
-  class_num: 21
+  class_num: 24
   use_ssld: True
   lr_mult_list: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
   infer_add_softmax: False
@@ -53,8 +53,16 @@ DataLoader:
   Train:
     dataset:
       name: MultiLabelDataset
-      image_root: ["dataset/tyjt/", "dataset/slagcar/"]
-      cls_label_path: "train.txt"
+      image_root: 
+        - "dataset/VA/tyjt_1th_vehichle_attribute"
+        - "dataset/VA/tyjt_2th_vehichle_attribute"
+        - "dataset/VA/tyjt_3th_vehichle_attribute"
+        - "dataset/VA/boden_1th"
+        - "dataset/VA/boden_2th"
+        - "dataset/VA/ruqi_1th"
+        - "dataset/VA/suzhouwanglian_1th"
+        - "dataset/VA/suzhouwanglian_2th"
+      cls_label_path: "train_old.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
@@ -77,8 +85,8 @@ DataLoader:
             flip_code: 1
         - NormalizeImage:
             scale: 1.0/255.0
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
+            mean: [0., 0., 0.] #[0.485, 0.456, 0.406]
+            std: [1., 1., 1.] #[0.229, 0.224, 0.225]
             order: ''
         - RandomErasing:
             EPSILON: 0.5
@@ -99,8 +107,16 @@ DataLoader:
   Eval:
     dataset:
       name: MultiLabelDataset
-      image_root: ["dataset/tyjt/", "dataset/slagcar/"]
-      cls_label_path: "val.txt"
+      image_root: 
+        - "dataset/VA/tyjt_1th_vehichle_attribute"
+        - "dataset/VA/tyjt_2th_vehichle_attribute"
+        - "dataset/VA/tyjt_3th_vehichle_attribute"
+        - "dataset/VA/boden_1th"
+        - "dataset/VA/boden_2th"
+        - "dataset/VA/ruqi_1th"
+        - "dataset/VA/suzhouwanglian_1th"
+        - "dataset/VA/suzhouwanglian_2th"
+      cls_label_path: "val_old.txt"
       label_ratio: True
       transform_ops:
         - DecodeImage:
@@ -110,8 +126,8 @@ DataLoader:
             size: [224, 224]
         - NormalizeImage:
             scale: 1.0/255.0
-            mean: [0.485, 0.456, 0.406]
-            std: [0.229, 0.224, 0.225]
+            mean: [0., 0., 0.] #[0.485, 0.456, 0.406]
+            std: [1.0, 1.0, 1.0] #[0.229, 0.224, 0.225]
             order: ''
     sampler:
       name: DistributedBatchSampler
@@ -122,6 +138,7 @@ DataLoader:
       num_workers: 8
       use_shared_memory: False
 
+# 跑inference权重时需要的配置
 Infer:
   infer_imgs: ./dataset/tyjt/val
   save_dir: ./output/tyjt2/infer_result

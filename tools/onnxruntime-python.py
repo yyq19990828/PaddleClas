@@ -104,7 +104,7 @@ def load_multiple_val_annotations(data_dirs, val_file):
     print(f"成功加载 {len(combined_annotations)} 条验证集标注")
     return combined_annotations
 
-def calculate_multilabel_metrics(predictions, annotations, raw_probs, num_classes, vehicle_type_classes=10, color_classes=11):
+def calculate_multilabel_metrics(predictions, annotations, raw_probs, num_classes, vehicle_type_classes=13, color_classes=11):
     """计算多标签分类的评估指标"""
     # 初始化统计变量
     correct_by_class = np.zeros(num_classes)
@@ -187,20 +187,40 @@ def calculate_multilabel_metrics(predictions, annotations, raw_probs, num_classe
         if total_pred_by_class[i] > 0:  # 只统计有预测的类别
             color_precisions.append(precision_per_class[i])
     
+    # 计算车型的加权平均指标
+    vehicle_total_gt = np.sum(total_gt_by_class[:vehicle_type_classes])
+    vehicle_total_pred = np.sum(total_pred_by_class[:vehicle_type_classes]) 
+    vehicle_total_correct = np.sum(correct_by_class[:vehicle_type_classes])
+    
+    vehicle_weighted_precision = vehicle_total_correct / vehicle_total_pred if vehicle_total_pred > 0 else 0
+    vehicle_weighted_recall = vehicle_total_correct / vehicle_total_gt if vehicle_total_gt > 0 else 0
+    
     vehicle_type_metrics = {
         'precision': np.mean(vehicle_type_precisions) if vehicle_type_precisions else 0,
         'recall': np.mean(vehicle_type_recalls) if vehicle_type_recalls else 0,
-        'total_gt': np.sum(total_gt_by_class[:vehicle_type_classes]),
-        'total_pred': np.sum(total_pred_by_class[:vehicle_type_classes]),
-        'total_correct': np.sum(correct_by_class[:vehicle_type_classes])
+        'weighted_precision': vehicle_weighted_precision,
+        'weighted_recall': vehicle_weighted_recall,
+        'total_gt': vehicle_total_gt,
+        'total_pred': vehicle_total_pred,
+        'total_correct': vehicle_total_correct
     }
+    
+    # 计算颜色的加权平均指标
+    color_total_gt = np.sum(total_gt_by_class[vehicle_type_classes:])
+    color_total_pred = np.sum(total_pred_by_class[vehicle_type_classes:])
+    color_total_correct = np.sum(correct_by_class[vehicle_type_classes:])
+    
+    color_weighted_precision = color_total_correct / color_total_pred if color_total_pred > 0 else 0
+    color_weighted_recall = color_total_correct / color_total_gt if color_total_gt > 0 else 0
     
     color_metrics = {
         'precision': np.mean(color_precisions) if color_precisions else 0,
         'recall': np.mean(color_recalls) if color_recalls else 0,
-        'total_gt': np.sum(total_gt_by_class[vehicle_type_classes:]),
-        'total_pred': np.sum(total_pred_by_class[vehicle_type_classes:]),
-        'total_correct': np.sum(correct_by_class[vehicle_type_classes:])
+        'weighted_precision': color_weighted_precision,
+        'weighted_recall': color_weighted_recall,
+        'total_gt': color_total_gt,
+        'total_pred': color_total_pred,
+        'total_correct': color_total_correct
     }
     
     # 生成混淆矩阵数据
@@ -267,8 +287,8 @@ class ONNXPredictor:
             probs = 1 / (1 + np.exp(-probs))
         
         # 确保每个样本只预测一个车型和一个颜色
-        vehicle_type_count = 10  # 假设前10个类别为车型
-        color_count = 11         # 假设后11个类别为颜色
+        vehicle_type_count = 13  # 13个车型类别 (0-12)
+        color_count = 11         # 11个颜色类别 (13-23)
         
         # 找到概率最高的车型和颜色
         vehicle_probs = probs[:vehicle_type_count]
@@ -369,7 +389,7 @@ class ONNXPredictor:
 
         return results, predictions, raw_probs
 
-def generate_confusion_matrix(predictions, annotations, num_classes, vehicle_type_classes=10, color_classes=11, labels=None):
+def generate_confusion_matrix(predictions, annotations, num_classes, vehicle_type_classes=13, color_classes=11, labels=None):
     """生成混淆矩阵"""
     # 分别为车型和颜色创建混淆矩阵
     vehicle_true = []
@@ -495,7 +515,7 @@ def visualize_confusion_matrix(cm, class_names, title, save_path):
     print(f"混淆矩阵已保存到: {save_path}")
     print(f"标签索引对照表已保存到: {legend_path}")
 
-def collect_misclassified_images(misclassified_data, raw_probs, labels, output_dir, topk=3):
+def collect_misclassified_images(misclassified_data, raw_probs, labels, output_dir, topk=3, save_ori_image=False):
     """收集分类错误的图片并处理"""
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
@@ -506,6 +526,13 @@ def collect_misclassified_images(misclassified_data, raw_probs, labels, output_d
     os.makedirs(vehicle_dir, exist_ok=True)
     os.makedirs(color_dir, exist_ok=True)
     
+    # 如果需要保存原图，创建ori_image文件夹
+    if save_ori_image:
+        ori_vehicle_dir = os.path.join(output_dir, "ori_image", "vehicle_errors")
+        ori_color_dir = os.path.join(output_dir, "ori_image", "color_errors")
+        os.makedirs(ori_vehicle_dir, exist_ok=True)
+        os.makedirs(ori_color_dir, exist_ok=True)
+    
     # 处理车型错误
     process_misclassified_category(
         misclassified_data['vehicle'], 
@@ -513,9 +540,10 @@ def collect_misclassified_images(misclassified_data, raw_probs, labels, output_d
         labels, 
         vehicle_dir, 
         "车型", 
-        0,  # vehicle_start_idx
-        10,  # vehicle_classes
-        topk
+        0,  #NOTE vehicle_start_idx
+        13,  # vehicle_classes
+        topk,
+        ori_vehicle_dir if save_ori_image else None
     )
     
     # 处理颜色错误
@@ -525,9 +553,10 @@ def collect_misclassified_images(misclassified_data, raw_probs, labels, output_d
         labels, 
         color_dir, 
         "颜色", 
-        10,  # color_start_idx
+        13,  #NOTE color_start_idx
         11,  # color_classes
-        topk
+        topk,
+        ori_color_dir if save_ori_image else None
     )
     
     print(f"已收集并处理 {len(misclassified_data['vehicle'])} 张车型错误图片和 {len(misclassified_data['color'])} 张颜色错误图片")
@@ -536,7 +565,7 @@ def collect_misclassified_images(misclassified_data, raw_probs, labels, output_d
         'color_count': len(misclassified_data['color'])
     }
 
-def process_misclassified_category(misclassified_items, raw_probs, labels, output_dir, category_name, start_idx, num_classes, topk=3):
+def process_misclassified_category(misclassified_items, raw_probs, labels, output_dir, category_name, start_idx, num_classes, topk=3, ori_image_dir=None):
     """处理特定类别的错误分类图像，文本信息显示在图片右侧"""
     for i, (image_path, true_idx, pred_idx, _) in enumerate(misclassified_items):
         try:
@@ -649,6 +678,11 @@ def process_misclassified_category(misclassified_items, raw_probs, labels, outpu
             save_path = os.path.join(output_dir, f"{filename_no_ext}_T{true_idx}_P{pred_idx}.jpg")
             cv2.imwrite(save_path, final_img)
             
+            # 如果需要保存原图
+            if ori_image_dir is not None:
+                ori_save_path = os.path.join(ori_image_dir, f"{filename_no_ext}_T{true_idx}_P{pred_idx}.jpg")
+                cv2.imwrite(ori_save_path, img_original)
+            
         except Exception as e:
             print(f"处理图像 {image_path} 时出错: {str(e)}")
 
@@ -665,7 +699,8 @@ def main():
     parser.add_argument('--apply_sigmoid', action='store_true', help='是否对模型输出应用sigmoid')
     parser.add_argument('--confusion_matrix', action='store_true', help='是否生成混淆矩阵')
     parser.add_argument('--error_collection', action='store_true', help='是否收集分类错误的图片')
-    parser.add_argument('--error_dir', default='dataset/VA/混淆项', help='分类错误图片的保存目录')
+    parser.add_argument('--save_ori_image', action='store_true', help='是否保存错误图片的原图到ori_image文件夹')
+    parser.add_argument('--error_dir', default='dataset/VA/eval_error', help='分类错误图片的保存目录')
     args = parser.parse_args()
 
     if not args.image and not args.data_dir:
@@ -701,24 +736,36 @@ def main():
         if args.eval and args.val_file:
             combined_annotations = load_multiple_val_annotations(args.data_dir, args.val_file)
 
+        # 获取ONNX模型文件名（不带扩展名）
+        onnx_base = os.path.splitext(os.path.basename(args.model))[0]
+        # 分类错误和混淆矩阵的主目录（与--error_dir同级，且以onnx模型名命名）
+        output_root = os.path.join(os.path.dirname(args.error_dir), onnx_base)
+        print(f"结果将保存到: {output_root}")
+        # if os.path.exists(output_root):
+        #     shutil.rmtree(output_root)
+        os.makedirs(output_root, exist_ok=True)
+        # 混淆矩阵和分类错误图片的子目录
+        confusion_dir = os.path.join(output_root, "confusion_matrix")
+        error_dir = os.path.join(output_root, "misclassified")
+        os.makedirs(confusion_dir, exist_ok=True)
+        os.makedirs(error_dir, exist_ok=True)
+
         # 如果是评估模式并且有标注，直接使用所有标注的图像路径进行一次性预测
         if args.eval and combined_annotations:
             print(f"直接使用验证集标注中的图像进行批量预测")
-            # 任意选择一个数据目录作为基础路径（只用于日志显示）
             base_dir = args.data_dir[0]
             results, predictions, raw_probs = predictor.batch_predict(
-                base_dir,  # 这里的base_dir只是为了满足函数参数要求
-                args.topk, 
+                base_dir,
+                args.topk,
                 args.threshold,
                 annotations=combined_annotations
             )
         else:
-            # 如果不是评估模式或没有标注，则按文件夹处理
             results, predictions, raw_probs = {}, {}, {}
             for data_dir in args.data_dir:
                 dir_results, dir_predictions, dir_raw_probs = predictor.batch_predict(
-                    data_dir, 
-                    args.topk, 
+                    data_dir,
+                    args.topk,
                     args.threshold,
                     annotations=None
                 )
@@ -726,112 +773,101 @@ def main():
                 predictions.update(dir_predictions)
                 raw_probs.update(dir_raw_probs)
 
-        print(f"共处理 {len(results)} 张图像")
-        avg_time = sum(r['time'] for r in results.values()) / len(results) if results else 0
-        print(f"平均推理时间: {avg_time*1000:.2f}ms")
+        # ========== 输出信息写入README.md ========== #
+        readme_path = os.path.join(output_root, "README.md")
+        with open(readme_path, "w", encoding="utf-8") as f:
+            f.write(f"共处理 {len(results)} 张图像\n")
+            avg_time = sum(r['time'] for r in results.values()) / len(results) if results else 0
+            f.write(f"平均推理时间: {avg_time*1000:.2f}ms\n")
 
-        if args.eval and predictor.labels:
-            print(f"开始评估模型性能...")
-            if not combined_annotations:
-                print("无法加载验证集标注信息或标注文件为空")
-                return
+            if args.eval and predictor.labels:
+                f.write(f"开始评估模型性能...\n")
+                if not combined_annotations:
+                    f.write("无法加载验证集标注信息或标注文件为空\n")
+                    return
 
-            # 当使用annotations时，predictions的键应该与combined_annotations的键相同
-            # 因此不需要再计算共同的键，直接使用predictions的键即可
-            print(f"预测集大小: {len(predictions)}, 标注集大小: {len(combined_annotations)}")
-            
-            if len(predictions) == 0:
-                print("错误: 没有找到任何可预测的图像，无法评估")
-                return
+                f.write(f"预测集大小: {len(predictions)}, 标注集大小: {len(combined_annotations)}\n")
+                if len(predictions) == 0:
+                    f.write("错误: 没有找到任何可预测的图像，无法评估\n")
+                    return
 
-            num_classes = len(predictor.labels)
-            # 直接使用predictions和combined_annotations，不再需要找交集
-            metrics = calculate_multilabel_metrics(predictions, combined_annotations, raw_probs, num_classes)
+                num_classes = len(predictor.labels)
+                metrics = calculate_multilabel_metrics(predictions, combined_annotations, raw_probs, num_classes)
 
-            print("\n===== 多标签分类评估结果 =====")
-            print(f"微平均准确率: {metrics['micro_precision']:.4f}")
-            print(f"微平均召回率: {metrics['micro_recall']:.4f}")
-            print(f"微平均F1分数: {metrics['micro_f1']:.4f}")
-            print(f"宏平均准确率: {metrics['macro_precision']:.4f}")
-            print(f"宏平均召回率: {metrics['macro_recall']:.4f}")
-            print(f"加权平均准确率: {metrics['weighted_precision']:.4f}")
-            print(f"加权平均召回率: {metrics['weighted_recall']:.4f}")
-            
-            # 生成混淆矩阵
-            if args.confusion_matrix:
-                print("\n生成混淆矩阵...")
-                confusion_dir = os.path.join(os.path.dirname(args.error_dir), "confusion_matrix")
-                os.makedirs(confusion_dir, exist_ok=True)
-                
-                confusion_data = metrics['confusion_data']
-                vehicle_labels = predictor.labels[:10]  # 假设前10个是车型
-                color_labels = predictor.labels[10:21]  # 假设后11个是颜色
-                
-                # 生成车型混淆矩阵
-                visualize_confusion_matrix(
-                    confusion_data['vehicle'], 
-                    vehicle_labels, 
-                    "Vehicle Type Confusion Matrix", 
-                    os.path.join(confusion_dir, "vehicle_confusion_matrix.png")
-                )
-                
-                # 生成颜色混淆矩阵
-                visualize_confusion_matrix(
-                    confusion_data['color'], 
-                    color_labels, 
-                    "Color Confusion Matrix", 
-                    os.path.join(confusion_dir, "color_confusion_matrix.png")
-                )
-                
-                print(f"混淆矩阵已保存到: {confusion_dir}")
-                
-            # 收集分类错误的图片
-            if args.error_collection:
-                print("\n收集分类错误的图片...")
-                # 使用英文目录名避免中文路径问题
-                error_dir = os.path.join(os.path.dirname(args.error_dir), "misclassified")
-                os.makedirs(error_dir, exist_ok=True)
-                
-                # 使用生成的混淆数据
-                misclassified_stats = collect_misclassified_images(
-                    metrics['confusion_data']['misclassified'],
-                    metrics['raw_probs_dict'],
-                    predictor.labels,
-                    error_dir,
-                    args.topk
-                )
-                
-                print(f"分类错误的图片已保存到: {error_dir}")
-                print(f"车型错误图片数量: {misclassified_stats['vehicle_count']}")
-                print(f"颜色错误图片数量: {misclassified_stats['color_count']}")
-            
-            # 打印车型和颜色的单独结果
-            vm = metrics['vehicle_type_metrics']
-            cm = metrics['color_metrics']
-            
-            print("\n车型分类结果:")
-            print(f"  准确率: {vm['precision']:.4f}")
-            print(f"  召回率: {vm['recall']:.4f}")
-            print(f"  正确预测数: {vm['total_correct']}")
-            print(f"  总真实标签数: {vm['total_gt']}")
-            print(f"  总预测标签数: {vm['total_pred']}")
-            
-            print("\n颜色分类结果:")
-            print(f"  准确率: {cm['precision']:.4f}")
-            print(f"  召回率: {cm['recall']:.4f}")
-            print(f"  正确预测数: {cm['total_correct']}")
-            print(f"  总真实标签数: {cm['total_gt']}")
-            print(f"  总预测标签数: {cm['total_pred']}")
-            
-            # 打印每个类别的性能指标:
-            print("\n每个类别的性能指标:")
-            for i in range(num_classes):
-                if metrics['class_samples'][i] > 0:  # 只显示有样本的类别
-                    class_name = predictor.labels[i]
-                    print(f"类别 {i} ({class_name}):")
-                    print(f"  准确率: {metrics['precision_per_class'][i]:.4f}")
-                    print(f"  召回率: {metrics['recall_per_class'][i]:.4f}")
-                    print(f"  样本数: {int(metrics['class_samples'][i])}")
+                f.write("\n===== 多标签分类评估结果 =====\n")
+                f.write(f"微平均准确率: {metrics['micro_precision']:.4f}\n")
+                f.write(f"微平均召回率: {metrics['micro_recall']:.4f}\n")
+                f.write(f"微平均F1分数: {metrics['micro_f1']:.4f}\n")
+                f.write(f"宏平均准确率: {metrics['macro_precision']:.4f}\n")
+                f.write(f"宏平均召回率: {metrics['macro_recall']:.4f}\n")
+                f.write(f"加权平均准确率: {metrics['weighted_precision']:.4f}\n")
+                f.write(f"加权平均召回率: {metrics['weighted_recall']:.4f}\n")
+
+                # 生成混淆矩阵
+                if args.confusion_matrix:
+                    f.write("\n生成混淆矩阵...\n")
+                    confusion_data = metrics['confusion_data']
+                    vehicle_labels = predictor.labels[:13] #NOTE: 车型标签从0到12(一共13个车型)
+                    color_labels = predictor.labels[13:24] #NOTE: 颜色标签从13到23(一共11个颜色)
+                    visualize_confusion_matrix(
+                        confusion_data['vehicle'],
+                        vehicle_labels,
+                        "Vehicle Type Confusion Matrix",
+                        os.path.join(confusion_dir, "vehicle_confusion_matrix.png")
+                    )
+                    visualize_confusion_matrix(
+                        confusion_data['color'],
+                        color_labels,
+                        "Color Confusion Matrix",
+                        os.path.join(confusion_dir, "color_confusion_matrix.png")
+                    )
+                    f.write(f"混淆矩阵已保存到: {confusion_dir}\n")
+
+                # 收集分类错误的图片
+                if args.error_collection:
+                    f.write("\n收集分类错误的图片...\n")
+                    misclassified_stats = collect_misclassified_images(
+                        metrics['confusion_data']['misclassified'],
+                        metrics['raw_probs_dict'],
+                        predictor.labels,
+                        error_dir,
+                        args.topk,
+                        args.save_ori_image
+                    )
+                    f.write(f"分类错误的图片已保存到: {error_dir}\n")
+                    f.write(f"车型错误图片数量: {misclassified_stats['vehicle_count']}\n")
+                    f.write(f"颜色错误图片数量: {misclassified_stats['color_count']}\n")
+
+                # 打印车型和颜色的单独结果
+                vm = metrics['vehicle_type_metrics']
+                cm = metrics['color_metrics']
+
+                f.write("\n车型分类结果:\n")
+                f.write(f"  准确率(宏平均): {vm['precision']:.4f}\n")
+                f.write(f"  召回率(宏平均): {vm['recall']:.4f}\n")
+                f.write(f"  准确率(加权): {vm['weighted_precision']:.4f}\n")
+                f.write(f"  召回率(加权): {vm['weighted_recall']:.4f}\n")
+                f.write(f"  正确预测数: {vm['total_correct']}\n")
+                f.write(f"  总真实标签数: {vm['total_gt']}\n")
+                f.write(f"  总预测标签数: {vm['total_pred']}\n")
+
+                f.write("\n颜色分类结果:\n")
+                f.write(f"  准确率(宏平均): {cm['precision']:.4f}\n")
+                f.write(f"  召回率(宏平均): {cm['recall']:.4f}\n")
+                f.write(f"  准确率(加权): {cm['weighted_precision']:.4f}\n")
+                f.write(f"  召回率(加权): {cm['weighted_recall']:.4f}\n")
+                f.write(f"  正确预测数: {cm['total_correct']}\n")
+                f.write(f"  总真实标签数: {cm['total_gt']}\n")
+                f.write(f"  总预测标签数: {cm['total_pred']}\n")
+
+                f.write("\n每个类别的性能指标:\n")
+                for i in range(num_classes):
+                    if metrics['class_samples'][i] > 0:
+                        class_name = predictor.labels[i]
+                        f.write(f"类别 {i} ({class_name}):\n")
+                        f.write(f"  准确率: {metrics['precision_per_class'][i]:.4f}\n")
+                        f.write(f"  召回率: {metrics['recall_per_class'][i]:.4f}\n")
+                        f.write(f"  样本数: {int(metrics['class_samples'][i])}\n")
 
 if __name__ == '__main__':
     print(f"ONNX Runtime 版本: {ort.__version__}")

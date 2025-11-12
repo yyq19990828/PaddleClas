@@ -5,17 +5,18 @@
 
 # for multi-cards train
 export CUDA_VISIBLE_DEVICES=0,1
+imgsize=224
 
 # 初始命令
 # python -m paddle.distributed.launch --gpus="0,1" tools/train.py -c ./ppcls/configs/ImageNet/ResNet/ResNet50.yaml
 
-# # 车辆属性识别PPLCNet
-# python3 -m paddle.distributed.launch \
-#     --gpus="0,1" \
-#     tools/train.py \
-#         -c ./ppcls/configs/PULC/vehicle_attribute/PPLCNet_x1_0_tyjt.yaml \
-#         -o Global.output_dir=./output_train/LCNet_$(date +%m%d) \
-#         -o Global.epochs=100 \
+# 车辆属性识别PPLCNet
+python3 -m paddle.distributed.launch \
+    --gpus="0,1" \
+    tools/train.py \
+        -c ./ppcls/configs/PULC/vehicle_attribute/PPLCNet_x1_0_tyjt.yaml \
+        -o Global.output_dir=./output_train/LCNet_${imgsize}X${imgsize}_$(date +%m%d) \
+        -o Global.epochs=100 \
 
 
 # 车辆属性识别resnet_CSRA
@@ -39,11 +40,11 @@ export CUDA_VISIBLE_DEVICES=0,1
 #         -o Global.output_dir=./output/ResNet_vd_ori \
  
 
-# 测试代码是否改对
-python3 -m paddle.distributed.launch \
-    --gpus="0,1" \
-    tools/train.py \
-        -c ./ppcls/configs/PULC/vehicle_attribute/PPLCNet_x1_0_tyjt.yaml \
-        -o Global.output_dir=./output_train/test \
-        -o Global.epochs=1 \
+# # 测试代码是否改对
+# python3 -m paddle.distributed.launch \
+#     --gpus="0,1" \
+#     tools/train.py \
+#         -c ./ppcls/configs/PULC/vehicle_attribute/PPLCNet_x1_0_tyjt.yaml \
+#         -o Global.output_dir=./output_train/test \
+#         -o Global.epochs=1 \
 

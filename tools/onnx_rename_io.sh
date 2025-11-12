@@ -3,20 +3,21 @@
 # 获取当前日期，格式为MMDD
 date_suffix=$(date +%m%d)
 
-# 获取输入参数，默认为test
+# 获取输入参数
 model_name=${1:-test}
+# 默认的 class_name 列表
+default_class_name='class_name=["car", "truck", "bus", "tanker", "slagcar", "fire engine", "mixer", "ambulance", "police car", "engineering truck", "hazardous_goods_vehicle", "manned_sweeping_vehicle", "school_bus", "black", "white", "gray", "red", "yellow", "green", "blue", "purple", "brown", "pink", "other"]'
+metadata=${2:-$default_class_name}
+
+# 如果 metadata 为 None，则使用默认值
+if [ "$metadata" = "None" ]; then
+    metadata=$default_class_name
+fi
 
 python3 "$(dirname "$0")/onnx_rename_io.py" \
-    --onnx /home/paddle_ws/PaddleClas/output_inference/${model_name}_${date_suffix}/inference_dynamic_${date_suffix}.onnx \
-    --output /home/paddle_ws/PaddleClas/output_inference/${model_name}_${date_suffix}/inference_dynamic_renamed_${date_suffix}.onnx \
+    --onnx /home/paddle_ws/PaddleClas/output_inference/${model_name}/inference_dynamic.onnx \
+    --output /home/paddle_ws/PaddleClas/output_inference/${model_name}/inference_dynamic_renamed.onnx \
     --input_names input \
     --output_names output \
     --enable_metadata \
-    --add_metadata  class_name_ori=["car", "truck", "bus", "tanker", "slagcar", "fire engine", \
-                    "mixer", "ambulance", "police car", "engineering truck", \
-                    "black", "white", "gray", "red", "yellow", "green", \
-                    "blue", "purple", "brown", "pink", "other"] \
-                    class_name_new=["bus", "car", "engineering truck", "truck", "police car", \
-                    "ambulance", "mixer", "tanker", "slagcar", "fire engine", \
-                    "white", "gray", "red", "yellow", "brown", "blue", "black", \
-                    "green", "purple", "pink", "other"]
+    --add_metadata ${metadata}

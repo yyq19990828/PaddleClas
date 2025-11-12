@@ -5,9 +5,9 @@ date_suffix=$(date +%m%d)
 model_name=${1:-test}
 
 paddle2onnx \
-    --model_dir=/home/paddle_ws/PaddleClas/output_inference/${model_name}_${date_suffix} \
+    --model_dir=/home/paddle_ws/PaddleClas/output_inference/${model_name} \
     --model_filename=inference.pdmodel \
     --params_filename=inference.pdiparams \
-    --save_file=/home/paddle_ws/PaddleClas/output_inference/${model_name}_${date_suffix}/inference_dynamic_${date_suffix}.onnx \
+    --save_file=/home/paddle_ws/PaddleClas/output_inference/${model_name}/inference_dynamic.onnx \
     --opset_version=13 \
     --enable_onnx_checker=True
