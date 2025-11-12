@@ -1,0 +1,167 @@
+# global configs [ppcls/configs/PULC/vehicle_attribute]
+Global:
+  checkpoints: null
+  pretrained_model: null
+  output_dir: "./output_train/LCnet"
+  device: "gpu"
+  save_interval: 25
+  eval_during_train: True
+  eval_interval: 1
+  epochs: 100
+  print_batch_step: 20
+  use_visualdl: True
+  # used for static mode and model export
+  image_shape: [3, 224, 224]
+  save_inference_dir: "./output_inference/LCnet"
+  use_multilabel: True
+
+# model architecture
+Arch:
+  name: "PPLCNet_x1_0"
+  pretrained: True
+  class_num: 24
+  use_ssld: True
+  lr_mult_list: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+  infer_add_softmax: False
+
+# loss function config for traing/eval process
+Loss:
+  Train:
+    - MultiLabelLoss:
+        weight: 1.0
+        weight_ratio: True
+        size_sum: True
+  Eval:
+    - MultiLabelLoss:
+        weight: 1.0
+        weight_ratio: True
+        size_sum: True
+
+Optimizer:
+  name: Momentum
+  momentum: 0.9
+  lr:
+    name: Cosine
+    learning_rate: 0.0125
+    warmup_epoch: 5
+  regularizer:
+    name: 'L2'
+    coeff: 0.0005
+
+# data loader for train and eval
+DataLoader:
+  Train:
+    dataset:
+      name: MultiLabelDataset
+      image_root: 
+        - "dataset/VA/tyjt_1th_vehichle_attribute"
+        - "dataset/VA/tyjt_2th_vehichle_attribute"
+        - "dataset/VA/tyjt_3th_vehichle_attribute"
+        - "dataset/VA/boden_1th"
+        - "dataset/VA/boden_2th"
+        - "dataset/VA/ruqi_1th"
+        - "dataset/VA/suzhouwanglian_1th"
+        - "dataset/VA/suzhouwanglian_2th"
+      cls_label_path: "train_old.txt"
+      label_ratio: True
+      transform_ops:
+        - DecodeImage:
+            to_rgb: True
+            channel_first: False
+        - ResizeImage:
+            size: [224, 224]
+        - TimmAutoAugment:
+            prob: 0.0
+            config_str: rand-m9-mstd0.5-inc1
+            interpolation: bicubic
+            img_size: [224, 224]
+        - Padv2:
+            size: [256, 256]
+            pad_mode: 1
+            fill_value: 0
+        - RandomCropImage:
+            size: [224, 224]
+        - RandFlipImage:
+            flip_code: 1
+        - NormalizeImage:
+            scale: 1.0/255.0
+            mean: [0., 0., 0.] #[0.485, 0.456, 0.406]
+            std: [1., 1., 1.] #[0.229, 0.224, 0.225]
+            order: ''
+        - RandomErasing:
+            EPSILON: 0.5
+            sl: 0.02
+            sh: 1.0/3.0
+            r1: 0.3
+            attempt: 10
+            use_log_aspect: True
+            mode: pixel
+    sampler:
+      name: DistributedBatchSampler
+      batch_size: 64
+      drop_last: True
+      shuffle: True
+    loader:
+      num_workers: 8
+      use_shared_memory: False
+  Eval:
+    dataset:
+      name: MultiLabelDataset
+      image_root: 
+        - "dataset/VA/tyjt_1th_vehichle_attribute"
+        - "dataset/VA/tyjt_2th_vehichle_attribute"
+        - "dataset/VA/tyjt_3th_vehichle_attribute"
+        - "dataset/VA/boden_1th"
+        - "dataset/VA/boden_2th"
+        - "dataset/VA/ruqi_1th"
+        - "dataset/VA/suzhouwanglian_1th"
+        - "dataset/VA/suzhouwanglian_2th"
+      cls_label_path: "val_old.txt"
+      label_ratio: True
+      transform_ops:
+        - DecodeImage:
+            to_rgb: True
+            channel_first: False
+        - ResizeImage:
+            size: [224, 224]
+        - NormalizeImage:
+            scale: 1.0/255.0
+            mean: [0., 0., 0.] #[0.485, 0.456, 0.406]
+            std: [1.0, 1.0, 1.0] #[0.229, 0.224, 0.225]
+            order: ''
+    sampler:
+      name: DistributedBatchSampler
+      batch_size: 128
+      drop_last: False
+      shuffle: False
+    loader:
+      num_workers: 8
+      use_shared_memory: False
+
+# 跑inference权重时需要的配置
+Infer:
+  infer_imgs: ./dataset/tyjt/val
+  save_dir: ./output/tyjt2/infer_result
+  batch_size: 10
+  transforms:
+    - DecodeImage:
+        to_rgb: True
+        channel_first: False
+    - ResizeImage:
+        size: [256, 192]
+    - NormalizeImage:
+        scale: 1.0/255.0
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+        order: ''
+    - ToCHWImage:
+  PostProcess:
+    name: VehicleAttribute
+    color_threshold: 0.5
+    type_threshold: 0.5
+
+Metric:
+  Eval:
+    - ATTRMetric:
+
+
