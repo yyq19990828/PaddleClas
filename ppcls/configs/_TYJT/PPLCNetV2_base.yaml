@@ -2,7 +2,7 @@
 # global configs [ppcls/configs/ImageNet/PPLCNetV2]
 Global:
   checkpoints: null
-  pretrained_model: null
+  pretrained_model: pretrained_weights/PPLCNetV2_base_pretrained.pdparams
   output_dir: ./output/
   device: gpu
   save_interval: 1
@@ -116,8 +116,8 @@ DataLoader:
       use_shared_memory: False
 
 Infer:
-  infer_imgs: docs/images/inference_deployment/whl_demo.jpg
-  batch_size: 10
+  infer_imgs: dataset/reflective_vest/val/normal_pedestrian
+  batch_size: 1
   transforms:
     - DecodeImage:
         to_rgb: True
@@ -135,7 +135,7 @@ Infer:
   PostProcess:
     name: Topk
     topk: 5
-    class_id_map_file: ppcls/utils/imagenet1k_label_list.txt
+    class_id_map_file: dataset/reflective_vest/label_list.txt
 
 Metric:
   Train:

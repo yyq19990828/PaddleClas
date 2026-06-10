@@ -9,5 +9,5 @@ paddle2onnx \
     --model_filename=inference.pdmodel \
     --params_filename=inference.pdiparams \
     --save_file=/home/paddle_ws/PaddleClas/output_inference/${model_name}/inference_dynamic.onnx \
-    --opset_version=13 \
-    --enable_onnx_checker=True
+    --opset_version=12 \
+    --enable_onnx_checker=True 

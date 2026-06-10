@@ -16,4 +16,4 @@ python3 -m paddle.distributed.launch \
     tools/train.py \
         -c ./ppcls/configs/_TYJT/PPLCNetV2_base.yaml \
         -o Global.output_dir=./output_train/PPLCNetV2_base_${imgsize}X${imgsize}_$(date +%m%d) \
-        -o Global.epochs=480
+        -o Global.epochs=1
